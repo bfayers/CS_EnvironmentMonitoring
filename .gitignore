@@ -1,3 +1,6 @@
+#custom bits
+data.db
+
 #ignore from https://github.com/github/gitignore/blob/master/Python.gitignore
 
 # Byte-compiled / optimized / DLL files
