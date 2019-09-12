@@ -1,10 +1,10 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, make_response
 
 from db import get_db
 
 import time
 
-import hashlib
+import hashlib, string, random
 
 api = Blueprint('api', __name__)
 
@@ -41,6 +41,68 @@ def createUser():
         out['userName'] = username
         return out
 
+@api.route('/delete/user', methods=["DELETE"])
+def deleteUser():
+    data = request.json
+    username = data['username']
+    userCookie = request.cookies.get('userCookie')
+    #Check if cookie matches stored cookie
+    db = get_db()
+    cur = db.cursor()
+    cur.execute('SELECT userCookie, cookieExpiry FROM Users WHERE userName=?', (username,))
+    row = cur.fetchone()
+    out = {}
+    try:
+        if row[0] == userCookie:
+            #Checks if used cookie is expired or not
+            if row[1] >= int(time.time()):
+                cur.execute('DELETE FROM Users WHERE userName=?', (username,))
+                db.commit()
+                out['status'] = 'success'
+            else:
+                out['status'] = 'fail'
+                out['reason'] = 'Expired Cookie'
+        else:
+            out['status'] = 'fail'
+            out['reason'] = 'Invalid Cookie'
+        return out
+    except Exception as e:
+        print(e)
+        out['status'] = 'fail'
+        out['reason'] = 'Unknown Error'
+        return out
+
+@api.route('/user/login', methods=["GET", "POST"])
+def userLogin():
+    data = request.json
+    username = data['username']
+    password = data['password']
+    password_hash = hashlib.sha256()
+    password_hash.update(password.encode('utf=8'))
+    password_hash = password_hash.hexdigest()
+    #Check if password matches
+    db = get_db()
+    cur = db.cursor()
+    cur.execute('SELECT userPassword FROM Users WHERE userName=?', (username,))
+    row = cur.fetchone()
+    out = {}
+    if row[0] == password_hash:
+        #Password Matches!
+        cookie = ''
+        for i in range(0,128):
+            cookie += random.choice(random.choice([string.ascii_letters, string.ascii_lowercase, string.digits]))
+        out['status'] = 'success'
+        out['cookie'] = cookie
+        reply = make_response(out)
+        reply.set_cookie('userCookie', cookie, max_age=60*60*24)
+        cur.execute('UPDATE Users SET userCookie=?, cookieExpiry=? WHERE userName=?', (cookie, int(time.time())+60*60*24, username,))
+        db.commit()
+    else:
+        out['status'] = 'fail'
+        out['reason'] = 'Incorrect Password'
+        reply = make_response(out)
+    return reply
+    
 
 #Uses <sensorName> allows it to catch any, so that when data is GET or POST-ed it can go to a specific sensor's data.
 @api.route('/data/sensor/<sensorName>', methods=["GET", "POST"])
