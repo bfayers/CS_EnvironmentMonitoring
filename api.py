@@ -4,12 +4,43 @@ from db import get_db
 
 import time
 
+import hashlib
+
 api = Blueprint('api', __name__)
 
 @api.route('/')
 def apiMain():
     print(get_db())
     return 'Web docs soon, read code or md file for now.'
+
+
+@api.route('/create/user', methods=["POST"])
+def createUser():
+    data = request.json
+    username = data['username']
+    password = data['password']
+    password_hash = hashlib.sha256()
+    password_hash.update(password.encode('utf=8'))
+    password_hash = password_hash.hexdigest()
+    db = get_db()
+    cur = db.cursor()
+    #Check if the username is taken
+    cur.execute('SELECT * FROM Users WHERE userName=?', (username,))
+    out = {}
+    rows = cur.fetchall()
+    if len(rows) != 0:
+        out['status'] = 'fail'
+        out['reason'] = 'Username already taken'
+        return out
+    else:
+        cur.execute('INSERT INTO Users(userName, userPassword) VALUES (?, ?)', (username, password_hash))
+        db.commit()
+        userId = cur.lastrowid
+        out['status'] = 'success'
+        out['userId'] = userId
+        out['userName'] = username
+        return out
+
 
 #Uses <sensorName> allows it to catch any, so that when data is GET or POST-ed it can go to a specific sensor's data.
 @api.route('/data/sensor/<sensorName>', methods=["GET", "POST"])
