@@ -8,6 +8,7 @@ import hashlib, string, random
 
 api = Blueprint('api', __name__)
 
+
 @api.route('/')
 def apiMain():
     print(get_db())
@@ -72,7 +73,7 @@ def deleteUser():
         out['reason'] = 'Unknown Error'
         return out
 
-@api.route('/user/login', methods=["GET", "POST"])
+@api.route('/user/login', methods=["POST"])
 def userLogin():
     data = request.json
     username = data['username']
@@ -103,6 +104,37 @@ def userLogin():
         reply = make_response(out)
     return reply
     
+@api.route('/create/key', methods=["POST"])
+def createApiKey():
+    data = request.json
+    username = data['username']
+    userCookie = request.cookies.get('userCookie')
+    db = get_db()
+    cur = db.cursor()
+    cur.execute('SELECT userID, cookieExpiry FROM Users WHERE userCookie=? AND userName=?', (userCookie,username,))
+    row = cur.fetchone()
+    out = {}
+    if row == None:
+        out['status'] = 'fail'
+        out['reason'] = 'Invalid Cookie or Username'
+        return out
+    else:
+        #Check if the cookie is still valid
+        if row[1] >= int(time.time()):
+            #Cookie is still valid!
+            #Create the api key
+            newKey = ""
+            for i in range(0,16):
+                newKey += random.choice(random.choice([string.ascii_letters, string.ascii_lowercase, string.digits]))
+            cur.execute('INSERT INTO APIKeys(apiKey, userID) VALUES (?, ?)', (newKey, row[0]))
+            db.commit()
+            out['status'] = 'success'
+            out['key'] = newKey
+        else:
+            out['status'] = 'fail'
+            out['reason'] = 'Expired Cookie'
+        return out
+
 
 #Uses <sensorName> allows it to catch any, so that when data is GET or POST-ed it can go to a specific sensor's data.
 @api.route('/data/sensor/<sensorName>', methods=["GET", "POST"])
