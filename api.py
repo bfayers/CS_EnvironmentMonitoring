@@ -135,6 +135,35 @@ def createApiKey():
             out['reason'] = 'Expired Cookie'
         return out
 
+@api.route('/delete/key', methods=["DELETE"])
+def deleteApiKey():
+    data = request.json
+    username = data['username']
+    apiKey = data['apiKey']
+    userCookie = request.cookies.get('userCookie')
+    db = get_db()
+    cur = db.cursor()
+    cur.execute('SELECT userID, cookieExpiry FROM Users WHERE userCookie=? AND userName=?', (userCookie,username,))
+    row = cur.fetchone()
+    out = {}
+    if row == None:
+        out['status'] = 'fail'
+        out['reason'] = 'Invalid Cookie or Username'
+        return out
+    else:
+        #Check if the cookie is still valid
+        if row[1] >= int(time.time()):
+            #Cookie is still valid!
+            #Delete the api key
+            cur.execute('DELETE FROM APIKeys WHERE apiKey=?', (apiKey,))
+            db.commit()
+            out['status'] = 'success'
+        else:
+            out['status'] = 'fail'
+            out['reason'] = 'Expired Cookie'
+        return out
+
+
 
 #Uses <sensorName> allows it to catch any, so that when data is GET or POST-ed it can go to a specific sensor's data.
 @api.route('/data/sensor/<sensorName>', methods=["GET", "POST"])
