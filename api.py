@@ -8,6 +8,31 @@ import hashlib, string, random
 
 api = Blueprint('api', __name__)
 
+def checkAccess(cookieOrKey):
+    db = get_db()
+    cur = db.cursor()
+    cur.execute('SELECT userID FROM APIKeys WHERE apiKey=?', (cookieOrKey,))
+    row = cur.fetchone()
+    if row == None:
+        #It might be a cookie not an apiKey
+        cur.execute('SELECT userID, cookieExpiry FROM Users WHERE userCookie=?', (cookieOrKey,))
+        cookieRow = cur.fetchone()
+        if cookieRow == None:
+            #No auth
+            return -1, 'invalidCookieOrKey'
+        else:
+            #It's a valid cookie
+            #Check expiry
+            if cookieRow[1] >= int(time.time()):
+                #Valid cookie
+                return cookieRow[0], 'validCookie'
+            else:
+                #Expired cookie
+                return -1, 'expiredCookie'
+    else:
+        #Valid apiKey
+        return row[0], 'validApi'
+
 
 @api.route('/')
 def apiMain():
@@ -212,17 +237,42 @@ def deleteSensor():
 @api.route('/info/sensor', methods=["GET"])
 def getSensorInfo():
     sensorName = request.args.get('sensorName')
-    apiKey = request.headers['apiKey']
+    try:
+        apiKey = request.headers['apiKey']
+    except KeyError:
+        apiKey = None
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT userID FROM APIKeys where apiKey=?', (apiKey,))
-    row = cur.fetchone()
+    # cur.execute('SELECT userID FROM APIKeys where apiKey=?', (apiKey,))
+    # row = cur.fetchone()
+    # out = {}
+    # if row == None:
+    #     out['status'] = 'fail'
+    #     out['reason'] = 'Invalid API Key'
+    #     return out
+    # userID = row[0]
     out = {}
-    if row == None:
+    if apiKey != None:
+        userID, valid = checkAccess(apiKey)
+    else:
+        #Get cookie
+        userCookie = request.cookies.get('userCookie')
+        userID, valid = checkAccess(userCookie)
+    if valid == 'validCookie' or valid == 'validApi':
+        #Keep going
+        pass
+    elif valid == 'invalidCookieOrKey':
         out['status'] = 'fail'
-        out['reason'] = 'Invalid API Key'
+        out['reason'] = 'Invalid Cookie or API Key'
         return out
-    userID = row[0]
+    elif valid == 'expiredCookie':
+        out['status'] = 'fail'
+        out['reason'] = 'Expired Cookie'
+        return out
+    else:
+        out['status'] = 'fail'
+        out['reason'] = 'Unknown Error'
+        return out
     cur.execute('SELECT * FROM Sensors WHERE sensorName=? AND userID=?', (sensorName, userID,))
     row = cur.fetchone()
     if row == None:
@@ -235,7 +285,6 @@ def getSensorInfo():
     out['sensorLat'] = row[2]
     out['sensorLon'] = row[3]
     return out
-
 
 
 
