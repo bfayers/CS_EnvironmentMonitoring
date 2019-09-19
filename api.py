@@ -104,7 +104,7 @@ def userLogin():
     username = data['username']
     password = data['password']
     password_hash = hashlib.sha256()
-    password_hash.update(password.encode('utf=8'))
+    password_hash.update(password.encode('utf-8'))
     password_hash = password_hash.hexdigest()
     #Check if password matches
     db = get_db()
@@ -194,23 +194,30 @@ def createSensor():
     sensorName = data['name']
     sensorLat = data['sensorLat']
     sensorLon = data['sensorLon']
-    apiKey = request.headers['apiKey']
+    try:
+        apiKey = request.headers['apiKey']
+    except KeyError:
+        apiKey = None
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT userID FROM APIKeys WHERE apiKey=?', (apiKey,))
-    row = cur.fetchone()
     out = {}
-    if row == None:
-        #Not valid key
-        out['status'] = 'fail'
-        out['reason'] = 'Invalid API Key'
-        return out, 403
+    if apiKey != None:
+        userID, valid = checkAccess(apiKey)
     else:
-        userID = row[0]
-        cur.execute('INSERT INTO Sensors(sensorName, sensorLat, sensorLon, userID) VALUES (?, ?, ?, ?)', (sensorName, sensorLat, sensorLon, userID,))
-        db.commit()
-        out['status'] = 'success'
-        return out
+        #Get cookie
+        userCookie = request.cookies.get('userCookie')
+        userID, valid = checkAccess(userCookie)
+    if valid == 'validCookie' or valid == 'validApi':
+        #Keep going
+        pass
+    else:
+        out['status'] = 'fail'
+        out['reason'] = valid
+        return out, 403
+    cur.execute('INSERT INTO Sensors(sensorName, sensorLat, sensorLon, userID) VALUES (?, ?, ?, ?)', (sensorName, sensorLat, sensorLon, userID,))
+    db.commit()
+    out['status'] = 'success'
+    return out
 
 @api.route('/delete/sensor', methods=["DELETE"])
 def deleteSensor():
@@ -243,14 +250,7 @@ def getSensorInfo():
         apiKey = None
     db = get_db()
     cur = db.cursor()
-    # cur.execute('SELECT userID FROM APIKeys where apiKey=?', (apiKey,))
-    # row = cur.fetchone()
-    # out = {}
-    # if row == None:
-    #     out['status'] = 'fail'
-    #     out['reason'] = 'Invalid API Key'
-    #     return out
-    # userID = row[0]
+
     out = {}
     if apiKey != None:
         userID, valid = checkAccess(apiKey)
@@ -261,17 +261,9 @@ def getSensorInfo():
     if valid == 'validCookie' or valid == 'validApi':
         #Keep going
         pass
-    elif valid == 'invalidCookieOrKey':
-        out['status'] = 'fail'
-        out['reason'] = 'Invalid Cookie or API Key'
-        return out
-    elif valid == 'expiredCookie':
-        out['status'] = 'fail'
-        out['reason'] = 'Expired Cookie'
-        return out
     else:
         out['status'] = 'fail'
-        out['reason'] = 'Unknown Error'
+        out['reason'] = valid
         return out
     cur.execute('SELECT * FROM Sensors WHERE sensorName=? AND userID=?', (sensorName, userID,))
     row = cur.fetchone()
