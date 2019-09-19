@@ -209,6 +209,34 @@ def deleteSensor():
         out['status'] = 'success'
         return out
 
+@api.route('/info/sensor', methods=["GET"])
+def getSensorInfo():
+    sensorName = request.args.get('sensorName')
+    apiKey = request.headers['apiKey']
+    db = get_db()
+    cur = db.cursor()
+    cur.execute('SELECT userID FROM APIKeys where apiKey=?', (apiKey,))
+    row = cur.fetchone()
+    out = {}
+    if row == None:
+        out['status'] = 'fail'
+        out['reason'] = 'Invalid API Key'
+        return out
+    userID = row[0]
+    cur.execute('SELECT * FROM Sensors WHERE sensorName=? AND userID=?', (sensorName, userID,))
+    row = cur.fetchone()
+    if row == None:
+        out['status'] = 'fail'
+        out['reason'] = 'Sensor Does Not Exist'
+        return out
+    out['status'] = 'success'
+    out['sensorID'] = row[0]
+    out['sensorName'] = row[1]
+    out['sensorLat'] = row[2]
+    out['sensorLon'] = row[3]
+    return out
+
+
 
 
 #Uses <sensorName> allows it to catch any, so that when data is GET or POST-ed it can go to a specific sensor's data.
