@@ -187,6 +187,28 @@ def createSensor():
         out['status'] = 'success'
         return out
 
+@api.route('/delete/sensor', methods=["DELETE"])
+def deleteSensor():
+    data = request.json
+    sensorName = data['name']
+    apiKey = request.headers['apiKey']
+    db = get_db()
+    cur = db.cursor()
+    cur.execute('SELECT userID FROM APIKeys WHERE apiKey=?', (apiKey,))
+    row = cur.fetchone()
+    out = {}
+    if row == None:
+        #Not valid key
+        out['status'] = 'fail'
+        out['reason'] = 'Invalid API Key'
+        return out, 403
+    else:
+        userID = row[0]
+        cur.execute('DELETE FROM Sensors WHERE sensorName=? AND userID=?', (sensorName, userID,))
+        db.commit()
+        out['status'] = 'success'
+        return out
+
 
 
 #Uses <sensorName> allows it to catch any, so that when data is GET or POST-ed it can go to a specific sensor's data.
