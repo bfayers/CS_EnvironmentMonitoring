@@ -223,23 +223,33 @@ def createSensor():
 def deleteSensor():
     data = request.json
     sensorName = data['name']
-    apiKey = request.headers['apiKey']
+    try:
+        apiKey = request.headers['apiKey']
+    except KeyError:
+        apiKey = None
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT userID FROM APIKeys WHERE apiKey=?', (apiKey,))
-    row = cur.fetchone()
+    #cur.execute('SELECT userID FROM APIKeys WHERE apiKey=?', (apiKey,))
+    #row = cur.fetchone()
     out = {}
-    if row == None:
-        #Not valid key
-        out['status'] = 'fail'
-        out['reason'] = 'Invalid API Key'
-        return out, 403
+    if apiKey != None:
+        userID, valid = checkAccess(apiKey)
     else:
-        userID = row[0]
-        cur.execute('DELETE FROM Sensors WHERE sensorName=? AND userID=?', (sensorName, userID,))
-        db.commit()
-        out['status'] = 'success'
-        return out
+        #Get cookie
+        userCookie = request.cookies.get('userCookie')
+        userID, valid = checkAccess(userCookie)
+    if valid == 'validCookie' or valid == 'validApi':
+        #Keep going
+        pass
+    else:
+        out['status'] = 'fail'
+        out['reason'] = valid
+        return out, 403
+
+    cur.execute('DELETE FROM Sensors WHERE sensorName=? AND userID=?', (sensorName, userID,))
+    db.commit()
+    out['status'] = 'success'
+    return out
 
 @api.route('/info/sensor', methods=["GET"])
 def getSensorInfo():
