@@ -288,6 +288,36 @@ def getSensorInfo():
     out['sensorLon'] = row[3]
     return out
 
+@api.route('/info/sensors', methods=["GET"])
+def listSensors():
+    try:
+        apiKey = request.headers['apiKey']
+    except KeyError:
+        apiKey = None
+    db = get_db()
+    cur = db.cursor()
+
+    out = {}
+    if apiKey != None:
+        userID, valid = checkAccess(apiKey)
+    else:
+        #Get cookie
+        userCookie = request.cookies.get('userCookie')
+        userID, valid = checkAccess(userCookie)
+    if valid == 'validCookie' or valid == 'validApi':
+        #Keep going
+        pass
+    else:
+        out['status'] = 'fail'
+        out['reason'] = valid
+        return out
+    cur.execute('SELECT sensorID FROM Sensors WHERE userID=?', (userID,))
+    rows = cur.fetchall()
+    out['sensorIDs'] = []
+    for row in rows:
+        out['sensorIDs'].append(row[0])
+    out['status'] = 'success'
+    return out
 
 
 #Uses <sensorName> allows it to catch any, so that when data is GET or POST-ed it can go to a specific sensor's data.
