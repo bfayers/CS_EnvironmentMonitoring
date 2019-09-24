@@ -4,7 +4,10 @@ from db import get_db
 
 import time
 
-import hashlib, string, random
+import string, random
+
+from argon2 import PasswordHasher
+import argon2
 
 api = Blueprint('api', __name__)
 
@@ -45,9 +48,8 @@ def createUser():
     data = request.json
     username = data['username']
     password = data['password']
-    password_hash = hashlib.sha256()
-    password_hash.update(password.encode('utf-8'))
-    password_hash = password_hash.hexdigest()
+    password_hasher = PasswordHasher()
+    password_hash = password_hasher.hash(password)
     db = get_db()
     cur = db.cursor()
     #Check if the username is taken
@@ -103,16 +105,15 @@ def userLogin():
     data = request.json
     username = data['username']
     password = data['password']
-    password_hash = hashlib.sha256()
-    password_hash.update(password.encode('utf-8'))
-    password_hash = password_hash.hexdigest()
+    password_hasher = PasswordHasher()
     #Check if password matches
     db = get_db()
     cur = db.cursor()
     cur.execute('SELECT userPassword FROM Users WHERE userName=?', (username,))
     row = cur.fetchone()
     out = {}
-    if row[0] == password_hash:
+    try: 
+        password_hasher.verify(row[0], password)
         #Password Matches!
         cookie = ''
         for i in range(0,128):
@@ -123,7 +124,7 @@ def userLogin():
         reply.set_cookie('userCookie', cookie, max_age=60*60*24)
         cur.execute('UPDATE Users SET userCookie=?, cookieExpiry=? WHERE userName=?', (cookie, int(time.time())+60*60*24, username,))
         db.commit()
-    else:
+    except argon2.exceptions.InvalidHash:
         out['status'] = 'fail'
         out['reason'] = 'Incorrect Password'
         reply = make_response(out)
