@@ -46,7 +46,7 @@ def createUser():
     username = data['username']
     password = data['password']
     password_hash = hashlib.sha256()
-    password_hash.update(password.encode('utf=8'))
+    password_hash.update(password.encode('utf-8'))
     password_hash = password_hash.hexdigest()
     db = get_db()
     cur = db.cursor()
