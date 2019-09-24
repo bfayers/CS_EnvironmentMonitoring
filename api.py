@@ -320,27 +320,89 @@ def listSensors():
     return out
 
 
-#Uses <sensorName> allows it to catch any, so that when data is GET or POST-ed it can go to a specific sensor's data.
-@api.route('/data/sensor/<sensorName>', methods=["GET", "POST"])
-def dataInput(sensorName):
+@api.route('/data/sensor', methods=["GET", "POST"])
+def dataInput():
+    out = {}
     if request.method == "POST":
+        #Auth
+        try:
+            apiKey = request.headers['apiKey']
+        except KeyError:
+            apiKey = None
+        if apiKey != None:
+            userID, valid = checkAccess(apiKey)
+        else:
+        #Get cookie
+            userCookie = request.cookies.get('userCookie')
+            userID, valid = checkAccess(userCookie)
+        if valid == 'validCookie' or valid == 'validApi':
+            #Keep going
+            pass
+        else:
+            out['status'] = 'fail'
+            out['reason'] = valid
+            return out, 403
         #Incoming data, add to database
         data = request.json
         sensorID = data['sensorID']
         temperature = data['temperature']
         humidity = data['humidity']
-        #Insert to database.
+        #DB
         db = get_db()
         cur = db.cursor()
+        #Is sensor owned by authenticated user
+        cur.execute('SELECT userID FROM Sensors WHERE sensorID=?', (sensorID,))
+        row = cur.fetchone()
+        if row[0] != userID:
+            #Not the right user
+            out['status'] = 'fail'
+            out['reason'] = 'Incorrect Authentication'
+            return out, 403
+        #Insert to database.
         cur.execute('INSERT INTO SensorData(sensorID, time, temperature, humidity) VALUES (?, ?, ?, ?)', (sensorID, int(time.time()), temperature, humidity))
         db.commit()
+        out['status'] = 'success'
+        return out
     elif request.method == "GET":
-        #Retrieve last 5 data points from database, make it into a json structure and hand it back.
+        #Auth
+        try:
+            apiKey = request.headers['apiKey']
+        except KeyError:
+            apiKey = None
+        if apiKey != None:
+            userID, valid = checkAccess(apiKey)
+        else:
+        #Get cookie
+            userCookie = request.cookies.get('userCookie')
+            userID, valid = checkAccess(userCookie)
+        if valid == 'validCookie' or valid == 'validApi':
+            #Keep going
+            pass
+        else:
+            out['status'] = 'fail'
+            out['reason'] = valid
+            return out, 403
+        #DB
         db = get_db()
         cur = db.cursor()
-        rows = cur.execute('SELECT * FROM SensorData WHERE sensorID == 0 LIMIT 5')
-        out = {}
-        out['sensorName'] = 'test'
+        #Is sensor owned by authenticated user
+        sensorID = request.args.get('sensorID')
+        cur.execute('SELECT userID FROM Sensors WHERE sensorID=?', (sensorID,))
+        row = cur.fetchone()
+        if row[0] != userID:
+            #Not the right user
+            out['status'] = 'fail'
+            out['reason'] = 'Incorrect Authentication'
+            return out, 403
+        #Get sensor details
+        sensorDetails = cur.execute('SELECT * FROM Sensors WHERE sensorID = ?', (sensorID,))
+        sensorDetails = cur.fetchone()
+        #Retrieve last 5 data points from database, make it into a json structure and hand it back.
+        rows = cur.execute('SELECT * FROM SensorData WHERE sensorID = ? LIMIT 5', (sensorID,))
+        out['sensorID'] = sensorID
+        out['sensorLat'] = sensorDetails[2]
+        out['sensorLon'] = sensorDetails[3]
+        out['sensorName'] = sensorDetails[1]
         out['data'] = []
         for row in rows:
             this = {}
@@ -349,5 +411,3 @@ def dataInput(sensorName):
             this['humidity'] = row[4]
             out['data'].append(this)
         return out
-
-    return sensorName
