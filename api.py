@@ -112,6 +112,10 @@ def userLogin():
     cur.execute('SELECT userPassword FROM Users WHERE userName=?', (username,))
     row = cur.fetchone()
     out = {}
+    if row == None:
+        out['status'] = 'fail'
+        out['reason'] = 'Username or Password Wrong'
+        return out, 403
     try: 
         password_hasher.verify(row[0], password)
         #Password Matches!
@@ -124,11 +128,11 @@ def userLogin():
         reply.set_cookie('userCookie', cookie, max_age=60*60*24)
         cur.execute('UPDATE Users SET userCookie=?, cookieExpiry=? WHERE userName=?', (cookie, int(time.time())+60*60*24, username,))
         db.commit()
-    except argon2.exceptions.InvalidHash:
+        return out, 200
+    except argon2.exceptions.VerifyMismatchError:
         out['status'] = 'fail'
-        out['reason'] = 'Incorrect Password'
-        reply = make_response(out)
-    return reply
+        out['reason'] = 'Username or Password Wrong'
+        return out, 403
     
 @api.route('/create/key', methods=["POST"])
 def createApiKey():
