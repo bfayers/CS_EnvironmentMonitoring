@@ -1,5 +1,6 @@
 from flask import Flask
 from api import api
+from dashboard import dashboard
 
 from db import get_db
 
@@ -13,9 +14,9 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
-@app.route('/')
-def main_page():
-    return 'Nothing Here, yet, check API docs'
+#@app.route('/')
+#def main_page():
+#    return 'Nothing Here, yet, check API docs'
 
 @app.route('/init')
 def init_db():
@@ -28,6 +29,7 @@ def init_db():
     return "idk, probably worked?"
 
 app.register_blueprint(api, url_prefix='/api')
+app.register_blueprint(dashboard)
 
 
-app.run(host='0.0.0.0', port='1234')
+app.run(host='0.0.0.0', port='1234', debug=True)
