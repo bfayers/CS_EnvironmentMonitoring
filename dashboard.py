@@ -6,4 +6,8 @@ dashboard = Blueprint('dashboard', __name__)
 
 @dashboard.route('/')
 def login():
-    return render_template('login.html')
+    return render_template('dashboard/login.html')
+
+@dashboard.route('/register')
+def register():
+    return render_template('dashboard/register.html')
