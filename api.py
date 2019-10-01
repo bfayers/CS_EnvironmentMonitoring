@@ -48,8 +48,11 @@ def createUser():
     data = request.json
     username = data['username']
     password = data['password']
+    #Initialise password hasher
     password_hasher = PasswordHasher()
+    #Hash the password and get a string of hash.
     password_hash = password_hasher.hash(password)
+    #Get database connection
     db = get_db()
     cur = db.cursor()
     #Check if the username is taken
@@ -61,9 +64,11 @@ def createUser():
         out['reason'] = 'Username already taken'
         return out
     else:
+        #Store username and password hash in database
         cur.execute('INSERT INTO Users(userName, userPassword) VALUES (?, ?)', (username, password_hash))
         db.commit()
         userId = cur.lastrowid
+        #Return userID and userName in response
         out['status'] = 'success'
         out['userId'] = userId
         out['userName'] = username
