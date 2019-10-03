@@ -133,7 +133,7 @@ def userLogin():
         reply.set_cookie('userCookie', cookie, max_age=60*60*24)
         cur.execute('UPDATE Users SET userCookie=?, cookieExpiry=? WHERE userName=?', (cookie, int(time.time())+60*60*24, username,))
         db.commit()
-        return out, 200
+        return reply, 200
     except argon2.exceptions.VerifyMismatchError:
         out['status'] = 'fail'
         out['reason'] = 'Username or Password Wrong'

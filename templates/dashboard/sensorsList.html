@@ -1,0 +1,28 @@
+{% extends 'dashboard/dashbase.html' %}
+
+{% block head %}
+    {{ super() }}
+    <script>
+        window.onload = function setActiveLink() {
+            $('#sensorLink').addClass('active');
+
+            //List Sensors
+            $.ajax({
+                type: "GET",
+                url: "/api/info/sensors",
+                complete: function(response) {
+                    alert(response.responseJSON['sensorIDs']);
+                }
+            })
+        }
+    </script>
+{% endblock %}
+
+
+{% block dashboardContent %}
+    <div class="row h-100">
+        <div class="col" style="color: white; text-align: center;">
+            <h3>Sensor List</h3>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'dashboard/dashbase.html' %}
+
+{% block head %}
+    {{ super() }}
+    <script>
+        window.onload = function setActiveLink() {
+            $('#homeLink').addClass('active');
+        }
+    </script>
+{% endblock %}

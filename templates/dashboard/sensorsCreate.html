@@ -1,0 +1,21 @@
+{% extends 'dashboard/dashbase.html' %}
+
+{% block head %}
+    {{ super() }}
+    <script>
+        window.onload = function setActiveLink() {
+            $('#sensorLink').addClass('active');
+        }
+    </script>
+{% endblock %}
+
+
+{% block dashboardContent %}
+    <div class="row h-100">
+        <div class="col" style="color: white; text-align: center;">
+            <h3>Create A New Sensor</h3>
+            <!-- USE THIS FOR MAP SOURCE
+            https://jsfiddle.net/0pufhot3/-->
+        </div>
+    </div>
+{% endblock %}
