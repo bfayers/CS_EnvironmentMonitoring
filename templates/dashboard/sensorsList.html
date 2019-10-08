@@ -3,17 +3,47 @@
 {% block head %}
     {{ super() }}
     <script>
+        function deleteSensor(sensorName) {
+            data = {
+                "name": sensorName
+            }
+            $.ajax({
+                type: "DELETE",
+                url: "/api/delete/sensor",
+                data: JSON.stringify(data),
+                contentType: "application/json"
+            })
+            location.reload();
+        }
         window.onload = function setActiveLink() {
-            $('#sensorLink').addClass('active');
+            $('#listSensorLink').addClass('active');
 
             //List Sensors
             $.ajax({
                 type: "GET",
                 url: "/api/info/sensors",
                 complete: function(response) {
-                    alert(response.responseJSON['sensorIDs']);
+                    sensorNames = response.responseJSON['sensorNames'];
+                    for (var i = 0; i<sensorNames.length; i++) {
+                        $.ajax({
+                            type: "GET",
+                            url: "/api/info/sensor?sensorName="+sensorNames[i],
+                            complete: function(response) {
+                                sensor = response.responseJSON;
+                                trString="";
+                                //trString+="<tr>\n<td scope=\"col\">"+sensor['sensorID']+"</td>\n";
+                                trString+="<tr>\n<td scope=\"col\">"+sensor['sensorName']+"</td>\n";
+                                trString+="<td scope=\"col\">"+sensor['sensorLat']+"</td>\n";
+                                trString+="<td scope=\"col\">"+sensor['sensorLon']+"</td>\n";
+                                trString+="<td scope=\"col\"> <button type=\"submit\" class=\"btn btn-danger\" onclick=\"deleteSensor('"+sensor['sensorName']+"')\">Delete</button> </td>\n</tr>";
+                                $('#tableBody').append(trString);
+                            }
+                        })
+                    }
                 }
             })
+
+
         }
     </script>
 {% endblock %}
@@ -21,8 +51,28 @@
 
 {% block dashboardContent %}
     <div class="row h-100">
-        <div class="col" style="color: white; text-align: center;">
-            <h3>Sensor List</h3>
+        <div class="col-md">
+
+        </div>
+        <div class="col" style="color: white;">
+            <h3 style="text-align: center;">Sensor List</h3>
+            <table class="table table-dark">
+                <thead>
+                    <tr>
+                        <!--<th scope="col">Sensor ID</th>-->
+                        <th scope="col">Sensor Name</th>
+                        <th scope="col">Latitude</th>
+                        <th scope="col">Longitude</th>
+                        <th scope="col">Delete?</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md">
+
         </div>
     </div>
 {% endblock %}
