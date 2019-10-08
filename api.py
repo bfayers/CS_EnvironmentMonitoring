@@ -321,11 +321,13 @@ def listSensors():
         out['status'] = 'fail'
         out['reason'] = valid
         return out
-    cur.execute('SELECT sensorID FROM Sensors WHERE userID=?', (userID,))
+    cur.execute('SELECT sensorID,sensorName FROM Sensors WHERE userID=?', (userID,))
     rows = cur.fetchall()
     out['sensorIDs'] = []
+    out['sensorNames'] = []
     for row in rows:
         out['sensorIDs'].append(row[0])
+        out['sensorNames'].append(row[1])
     out['status'] = 'success'
     return out
 
