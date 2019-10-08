@@ -4,18 +4,123 @@
     {{ super() }}
     <script>
         window.onload = function setActiveLink() {
-            $('#sensorLink').addClass('active');
+            $('#createSensorLink').addClass('active');
         }
+        function newSensor() {
+            data = {
+                "name": $("#sensorName").val(),
+                "sensorLat": $("#sensorLat").val(),
+                "sensorLon": $("#sensorLon").val()
+            }
+            $.ajax({
+                type: "POST",
+                url: "/api/create/sensor",
+                data: JSON.stringify(data),
+                contentType: "application/json"
+            })
+            .fail(
+                function() {
+                    $(".alert").addClass("alert-danger");
+                    $(".alert").text("Something went wrong");
+                    $('.alert').alert()
+                }
+            )
+            .done(
+                function() {
+                    document.location = "/";
+                }
+            )
+        }
+    </script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3&key=AIzaSyD7sdBKH_d9wqgU1f0Ik8xPZgnwceTHkAs"></script>
+    <script>
+        //Map Handling
+        //Stolen from https://jsfiddle.net/0pufhot3 with modifications
+        /*
+        * declare map as a global variable
+        */
+        var map;
+
+        /*
+        * use google maps api built-in mechanism to attach dom events
+        */
+        google.maps.event.addDomListener(window, "load", function () {
+
+        /*
+        * create map
+        */
+        var map = new google.maps.Map(document.getElementById("map_div"), {
+            center: new google.maps.LatLng(52.0448065, 1.1060837),
+            zoom: 9,
+            mapTypeId: google.maps.MapTypeId.HYBRID
+        });
+
+        /*
+        * create infowindow (which will be used by markers)
+        */
+        var infoWindow = new google.maps.InfoWindow();
+
+        /*
+        * marker creater function (acts as a closure for html parameter)
+        */
+        function createMarker(options, html) {
+            var marker = new google.maps.Marker(options);
+            if (html) {
+            google.maps.event.addListener(marker, "click", function () {
+                infoWindow.setContent(html);
+                infoWindow.open(options.map, this);
+            });
+            }
+            return marker;
+        }
+
+        /*
+        * add markers to map
+        */
+
+        var marker1 = createMarker({
+            position: new google.maps.LatLng(52.0448065, 1.1060837),
+            draggable: true,
+            map: map
+        });
+
+        
+        marker1.addListener('dragend', function (event) { 
+        document.getElementById("sensorLat").value = event.latLng.lat(); document.getElementById("sensorLon").value = event.latLng.lng(); 
+        
+        });
+        
+        });
     </script>
 {% endblock %}
 
 
 {% block dashboardContent %}
     <div class="row h-100">
-        <div class="col" style="color: white; text-align: center;">
-            <h3>Create A New Sensor</h3>
-            <!-- USE THIS FOR MAP SOURCE
-            https://jsfiddle.net/0pufhot3/-->
+        <div class="col">
+
+        </div>
+        <div class="col" style="color: white">
+            <h3 style="text-align: center;">Create A New Sensor</h3>
+            <div class="alert" role="alert"></div>
+            <div class="form-group">
+                <label>Sensor Name</label>
+                <input class="form-control" id="sensorName"></input>
+            </div>
+            <div id="map_div" style="height: 50%;"></div>
+            <br>
+            <button type="submit" class="btn btn-primary" onclick="newSensor()">Create Sensor</button>
+            <div class="form-group" style="visibility: hidden;">
+                <label>Sensor Latitude</label>
+                <input class="form-control" id="sensorLat" disabled></input>
+            </div>
+            <div class="form-group" style="visibility: hidden;">
+                <label>Sensor Longitude</label>
+                <input class="form-control" id="sensorLon" disabled></input>
+            </div>
+        </div>
+        <div class="col">
+
         </div>
     </div>
 {% endblock %}
