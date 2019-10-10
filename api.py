@@ -331,6 +331,38 @@ def listSensors():
     out['status'] = 'success'
     return out
 
+@api.route('/info/keys', methods=["GET"])
+def getKeys():
+    out = {}
+    #Auth
+    try:
+        apiKey = request.headers['apiKey']
+    except KeyError:
+        apiKey = None
+    if apiKey != None:
+        userID, valid = checkAccess(apiKey)
+    else:
+        #Get cookie
+        userCookie = request.cookies.get('userCookie')
+        userID, valid = checkAccess(userCookie)
+    if valid == 'validCookie' or valid == 'validApi':
+        #Keep going
+        pass
+    else:
+        out['status'] = 'fail'
+        out['reason'] = valid
+        return out, 403
+    #DB
+    db = get_db()
+    cur = db.cursor()
+    #Get keys
+    cur.execute('SELECT apiKey FROM APIKeys WHERE userID=?', (userID,))
+    rows = cur.fetchall()
+    out['apiKeys'] = []
+    for row in rows:
+        out['apiKeys'].append(row[0])
+        out['status'] = 'success'
+    return out
 
 @api.route('/data/sensor', methods=["GET", "POST"])
 def dataInput():
