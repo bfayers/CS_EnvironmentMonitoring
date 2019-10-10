@@ -18,6 +18,14 @@
             )
         }
 
+        function createKey() {
+            $.ajax({
+                url: "/api/create/key",
+                type: "POST"
+            })
+            
+        }
+
         window.onload = function setActiveLink() {
             $('#accountSettingsLink').addClass('active');
 
