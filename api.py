@@ -141,12 +141,10 @@ def userLogin():
     
 @api.route('/create/key', methods=["POST"])
 def createApiKey():
-    data = request.json
-    username = data['username']
     userCookie = request.cookies.get('userCookie')
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT userID, cookieExpiry FROM Users WHERE userCookie=? AND userName=?', (userCookie,username,))
+    cur.execute('SELECT userID, cookieExpiry FROM Users WHERE userCookie=?', (userCookie,))
     row = cur.fetchone()
     out = {}
     if row == None:
