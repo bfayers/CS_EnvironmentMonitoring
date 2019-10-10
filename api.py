@@ -76,8 +76,9 @@ def createUser():
 
 @api.route('/delete/user', methods=["DELETE"])
 def deleteUser():
-    data = request.json
-    username = data['username']
+    #data = request.json
+    #username = data['username']
+    username = request.args.get('username')
     userCookie = request.cookies.get('userCookie')
     #Check if cookie matches stored cookie
     db = get_db()
@@ -170,8 +171,9 @@ def createApiKey():
 
 @api.route('/delete/key', methods=["DELETE"])
 def deleteApiKey():
-    data = request.json
-    apiKey = data['apiKey']
+    #data = request.json
+    #apiKey = data['apiKey']
+    apiKey = request.args.get('apiKey')
     userCookie = request.cookies.get('userCookie')
     db = get_db()
     cur = db.cursor()
@@ -228,8 +230,9 @@ def createSensor():
 
 @api.route('/delete/sensor', methods=["DELETE"])
 def deleteSensor():
-    data = request.json
-    sensorName = data['name']
+    #data = request.json
+    #sensorName = data['name']
+    sensorName = request.args.get('name')
     try:
         apiKey = request.headers['apiKey']
     except KeyError:
