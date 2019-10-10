@@ -173,7 +173,7 @@ def createApiKey():
 def deleteApiKey():
     #data = request.json
     #apiKey = data['apiKey']
-    apiKey = request.args.get('apiKey')
+    apiKey = request.args.get('key')
     userCookie = request.cookies.get('userCookie')
     db = get_db()
     cur = db.cursor()
