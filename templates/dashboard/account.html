@@ -5,16 +5,17 @@
     <script>
 
         function deleteKey(apiKey) {
-            data = {
-                "apiKey": apiKey
-            }
+            url = "/api/delete/key?key="+apiKey;
             $.ajax({
+                url: url,
                 type: "DELETE",
-                url: "/api/delete/key",
-                data: JSON.stringify(data),
                 contentType: "application/json"
             })
-            location.reload();
+            .done (
+                function() {
+                    location.reload();
+                }
+            )
         }
 
         window.onload = function setActiveLink() {
@@ -26,7 +27,7 @@
                 url: "/api/info/keys",
                 complete: function(response) {
                     apiKeys = response.responseJSON['apiKeys'];
-                    for (var i = 0; i<sensorNames.length; i++) {
+                    for (var i = 0; i<apiKeys.length; i++) {
                         trString="";
                         trString+="<tr>\n<td scope=\"col\">"+apiKeys[i]+"</td>\n";
                         trString+="<td scope=\"col\"> <button type=\"submit\" class=\"btn btn-danger\" onclick=\"deleteKey('"+apiKeys[i]+"')\">Delete</button> </td>\n</tr>";

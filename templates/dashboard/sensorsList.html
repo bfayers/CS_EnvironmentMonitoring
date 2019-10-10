@@ -4,16 +4,16 @@
     {{ super() }}
     <script>
         function deleteSensor(sensorName) {
-            data = {
-                "name": sensorName
-            }
             $.ajax({
+                url: "/api/delete/sensor?name="+sensorName,
                 type: "DELETE",
-                url: "/api/delete/sensor",
-                data: JSON.stringify(data),
                 contentType: "application/json"
             })
-            location.reload();
+            .done (
+                function() {
+                    location.reload();
+                }
+            )
         }
         window.onload = function setActiveLink() {
             $('#listSensorLink').addClass('active');
