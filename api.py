@@ -173,12 +173,11 @@ def createApiKey():
 @api.route('/delete/key', methods=["DELETE"])
 def deleteApiKey():
     data = request.json
-    username = data['username']
     apiKey = data['apiKey']
     userCookie = request.cookies.get('userCookie')
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT userID, cookieExpiry FROM Users WHERE userCookie=? AND userName=?', (userCookie,username,))
+    cur.execute('SELECT userID, cookieExpiry FROM Users WHERE userCookie=?', (userCookie,))
     row = cur.fetchone()
     out = {}
     if row == None:
