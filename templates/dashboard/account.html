@@ -3,14 +3,63 @@
 {% block head %}
     {{ super() }}
     <script>
+
+        function deleteKey(apiKey) {
+            data = {
+                "apiKey": apiKey
+            }
+            $.ajax({
+                type: "DELETE",
+                url: "/api/delete/key",
+                data: JSON.stringify(data),
+                contentType: "application/json"
+            })
+            location.reload();
+        }
+
         window.onload = function setActiveLink() {
             $('#accountSettingsLink').addClass('active');
+
+            //Get data from API and add into table
+            $.ajax({
+                type: "GET",
+                url: "/api/info/keys",
+                complete: function(response) {
+                    apiKeys = response.responseJSON['apiKeys'];
+                    for (var i = 0; i<sensorNames.length; i++) {
+                        trString="";
+                        trString+="<tr>\n<td scope=\"col\">"+apiKeys[i]+"</td>\n";
+                        trString+="<td scope=\"col\"> <button type=\"submit\" class=\"btn btn-danger\" onclick=\"deleteKey('"+apiKeys[i]+"')\">Delete</button> </td>\n</tr>";
+                        $('#tableBody').append(trString);
+                    }
+                }
+            })
         }
     </script>
 {% endblock %}
 
 {% block dashboardContent %}
     <div class="row h-100">
+        <div class="col" style="color: white;">
+            <!-- API Key List/Creation/Deletion -->
+            <h4 style="text-align: center;">API Keys</h3>
+            <table class="table table-dark">
+                <thead>
+                <tr>
+                    <th scope="col">API Key</th>
+                    <th scope="col">Delete?</th>
+                </tr>
+                </thead>
+                <tbody id="tableBody">
+                    
+                </tbody>
+            </table>
+        </div>
+        <div class="col">
 
+        </div>
+        <div class="col">
+
+        </div>
     </div>
 {% endblock %}
