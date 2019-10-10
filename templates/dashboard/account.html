@@ -1,0 +1,16 @@
+{% extends 'dashboard/dashbase.html' %}
+{% block title %}Account{% endblock %}
+{% block head %}
+    {{ super() }}
+    <script>
+        window.onload = function setActiveLink() {
+            $('#accountSettingsLink').addClass('active');
+        }
+    </script>
+{% endblock %}
+
+{% block dashboardContent %}
+    <div class="row h-100">
+
+    </div>
+{% endblock %}
