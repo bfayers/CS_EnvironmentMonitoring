@@ -27,6 +27,12 @@ def dashSensors():
         return redirect("/login")
     return render_template('dashboard/sensors'+request.args.get('do')+'.html')
 
+@dashboard.route('/account')
+def dashAccount():
+    if authCheck() == False:
+        return redirect("/login")
+    return render_template('dashboard/account.html')
+
 @dashboard.route('/login')
 def login():
     return render_template('dashboard/login.html')
