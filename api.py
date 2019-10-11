@@ -1,4 +1,4 @@
-from flask import Blueprint, request, make_response
+from flask import Blueprint, request, make_response, jsonify
 
 from db import get_db
 
@@ -62,7 +62,7 @@ def createUser():
     if len(rows) != 0:
         out['status'] = 'fail'
         out['reason'] = 'Username already taken'
-        return out
+        return jsonify(out)
     else:
         #Store username and password hash in database
         cur.execute('INSERT INTO Users(userName, userPassword) VALUES (?, ?)', (username, password_hash))
@@ -72,7 +72,7 @@ def createUser():
         out['status'] = 'success'
         out['userId'] = userId
         out['userName'] = username
-        return out
+        return jsonify(out)
 
 @api.route('/delete/user', methods=["DELETE"])
 def deleteUser():
@@ -99,12 +99,12 @@ def deleteUser():
         else:
             out['status'] = 'fail'
             out['reason'] = 'Invalid Cookie'
-        return out
+        return jsonify(out)
     except Exception as e:
         print(e)
         out['status'] = 'fail'
         out['reason'] = 'Unknown Error'
-        return out
+        return jsonify(out)
 
 @api.route('/user/login', methods=["POST"])
 def userLogin():
@@ -121,7 +121,7 @@ def userLogin():
     if row == None:
         out['status'] = 'fail'
         out['reason'] = 'Username or Password Wrong'
-        return out, 403
+        return jsonify(out), 403
     try: 
         password_hasher.verify(row[0], password)
         #Password Matches!
@@ -130,7 +130,7 @@ def userLogin():
             cookie += random.choice(random.choice([string.ascii_letters, string.ascii_lowercase, string.digits]))
         out['status'] = 'success'
         out['cookie'] = cookie
-        reply = make_response(out)
+        reply = make_response(jsonify(out))
         reply.set_cookie('userCookie', cookie, max_age=60*60*24)
         cur.execute('UPDATE Users SET userCookie=?, cookieExpiry=? WHERE userName=?', (cookie, int(time.time())+60*60*24, username,))
         db.commit()
@@ -138,7 +138,7 @@ def userLogin():
     except argon2.exceptions.VerifyMismatchError:
         out['status'] = 'fail'
         out['reason'] = 'Username or Password Wrong'
-        return out, 403
+        return jsonify(out), 403
     
 @api.route('/create/key', methods=["POST"])
 def createApiKey():
@@ -151,7 +151,7 @@ def createApiKey():
     if row == None:
         out['status'] = 'fail'
         out['reason'] = 'Invalid Cookie or Username'
-        return out
+        return jsonify(out)
     else:
         #Check if the cookie is still valid
         if row[1] >= int(time.time()):
@@ -167,7 +167,7 @@ def createApiKey():
         else:
             out['status'] = 'fail'
             out['reason'] = 'Expired Cookie'
-        return out
+        return jsonify(out)
 
 @api.route('/delete/key', methods=["DELETE"])
 def deleteApiKey():
@@ -183,7 +183,7 @@ def deleteApiKey():
     if row == None:
         out['status'] = 'fail'
         out['reason'] = 'Invalid Cookie or Username'
-        return out
+        return jsonify(out)
     else:
         #Check if the cookie is still valid
         if row[1] >= int(time.time()):
@@ -195,7 +195,7 @@ def deleteApiKey():
         else:
             out['status'] = 'fail'
             out['reason'] = 'Expired Cookie'
-        return out
+        return jsonify(out)
 
 @api.route('/create/sensor', methods=["POST"])
 def createSensor():
@@ -222,11 +222,11 @@ def createSensor():
     else:
         out['status'] = 'fail'
         out['reason'] = valid
-        return out, 403
+        return jsonify(out), 403
     cur.execute('INSERT INTO Sensors(sensorName, sensorLat, sensorLon, userID) VALUES (?, ?, ?, ?)', (sensorName, sensorLat, sensorLon, userID,))
     db.commit()
     out['status'] = 'success'
-    return out
+    return jsonify(out)
 
 @api.route('/delete/sensor', methods=["DELETE"])
 def deleteSensor():
@@ -254,12 +254,12 @@ def deleteSensor():
     else:
         out['status'] = 'fail'
         out['reason'] = valid
-        return out, 403
+        return jsonify(out), 403
 
     cur.execute('DELETE FROM Sensors WHERE sensorName=? AND userID=?', (sensorName, userID,))
     db.commit()
     out['status'] = 'success'
-    return out
+    return jsonify(out)
 
 @api.route('/info/sensor', methods=["GET"])
 def getSensorInfo():
@@ -284,19 +284,19 @@ def getSensorInfo():
     else:
         out['status'] = 'fail'
         out['reason'] = valid
-        return out
+        return jsonify(out)
     cur.execute('SELECT * FROM Sensors WHERE sensorName=? AND userID=?', (sensorName, userID,))
     row = cur.fetchone()
     if row == None:
         out['status'] = 'fail'
         out['reason'] = 'Sensor Does Not Exist'
-        return out
+        return jsonify(out)
     out['status'] = 'success'
     out['sensorID'] = row[0]
     out['sensorName'] = row[1]
     out['sensorLat'] = row[2]
     out['sensorLon'] = row[3]
-    return out
+    return jsonify(out)
 
 @api.route('/info/sensors', methods=["GET"])
 def listSensors():
@@ -320,7 +320,7 @@ def listSensors():
     else:
         out['status'] = 'fail'
         out['reason'] = valid
-        return out
+        return jsonify(out)
     cur.execute('SELECT sensorID,sensorName FROM Sensors WHERE userID=?', (userID,))
     rows = cur.fetchall()
     out['sensorIDs'] = []
@@ -329,7 +329,7 @@ def listSensors():
         out['sensorIDs'].append(row[0])
         out['sensorNames'].append(row[1])
     out['status'] = 'success'
-    return out
+    return jsonify(out)
 
 @api.route('/info/keys', methods=["GET"])
 def getKeys():
@@ -351,7 +351,7 @@ def getKeys():
     else:
         out['status'] = 'fail'
         out['reason'] = valid
-        return out, 403
+        return jsonify(out), 403
     #DB
     db = get_db()
     cur = db.cursor()
@@ -362,7 +362,7 @@ def getKeys():
     for row in rows:
         out['apiKeys'].append(row[0])
         out['status'] = 'success'
-    return out
+    return jsonify(out)
 
 @api.route('/data/sensor', methods=["GET", "POST"])
 def dataInput():
@@ -385,7 +385,7 @@ def dataInput():
         else:
             out['status'] = 'fail'
             out['reason'] = valid
-            return out, 403
+            return jsonify(out), 403
         #Incoming data, add to database
         data = request.json
         sensorID = data['sensorID']
@@ -401,12 +401,12 @@ def dataInput():
             #Not the right user
             out['status'] = 'fail'
             out['reason'] = 'Incorrect Authentication'
-            return out, 403
+            return jsonify(out), 403
         #Insert to database.
         cur.execute('INSERT INTO SensorData(sensorID, time, temperature, humidity) VALUES (?, ?, ?, ?)', (sensorID, int(time.time()), temperature, humidity))
         db.commit()
         out['status'] = 'success'
-        return out
+        return jsonify(out)
     elif request.method == "GET":
         #Auth
         try:
@@ -425,7 +425,7 @@ def dataInput():
         else:
             out['status'] = 'fail'
             out['reason'] = valid
-            return out, 403
+            return jsonify(out), 403
         #DB
         db = get_db()
         cur = db.cursor()
@@ -437,7 +437,7 @@ def dataInput():
             #Not the right user
             out['status'] = 'fail'
             out['reason'] = 'Incorrect Authentication'
-            return out, 403
+            return jsonify(out), 403
         #Get sensor details
         sensorDetails = cur.execute('SELECT * FROM Sensors WHERE sensorID = ?', (sensorID,))
         sensorDetails = cur.fetchone()
@@ -454,4 +454,4 @@ def dataInput():
             this['temperature'] = row[3]
             this['humidity'] = row[4]
             out['data'].append(this)
-        return out
+        return jsonify(out)
