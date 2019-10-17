@@ -10,18 +10,93 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.js" integrity="sha256-qSIshlknROr4J8GMHRlW3fGKrPki733tLq+qeMCR05Q=" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.css" integrity="sha256-IvM9nJf/b5l2RoebiFno92E5ONttVyaEEsdemDC6iQA=" crossorigin="anonymous" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.js" integrity="sha256-arMsf+3JJK2LoTGqxfnuJPFTU4hAK57MtIPdFpiHXOU=" crossorigin="anonymous"></script>
+    <script>
+        //Update chart function
+        function updateChart(chart, sensorID) {
+            $.ajax({
+                type: "GET",
+                url: "/api/data/sensor?sensorID="+sensorID,
+                complete: function(response) {
+                    sensorData = response.responseJSON['data'];
+                    for (var i = 0; i<sensorData.length; i++) {
+                        dataPoint = sensorData[i];
+                        var date = new Date(dataPoint['time']*1000).toLocaleString();
+                        var temperature = dataPoint['temperature'];
+                        var humidity = dataPoint['humidity'];
+                        chart.data.labels[i] = date;
+                        chart.data.datasets[0].data[i] = temperature;
+                        chart.data.datasets[1].data[i] = humidity;
+                    }
+                    chart.update();
+                }
+            })
+        }
+    </script>
+    <style>
+        .chartSelector {
+            width: 50%;
+        }
+        
+    </style>
 {% endblock %}
 
 {% block dashboardContent %}
     <div class="row h-100">
         <div class="col">
-
+            <canvas id="chart1" width="100%" height="50%"></canvas>
+            <select class="custom-select chartSelector" id="chartOneSelector">
+                <option value=0 selected disabled>Choose A Sensor</option>
+            </select>
+            <button type="submit" class="btn btn-primary" onclick="updateChart(chartOne, document.getElementById('chartOneSelector').value)">Go</button>
+            <script>
+                $.ajax({
+                    type: "GET",
+                    url: "/api/info/sensors",
+                    complete: function(response) {
+                        sensors = response.responseJSON;
+                        sensorIDs = sensors['sensorIDs'];
+                        sensorNames = sensors['sensorNames'];
+                        for (var i = 0; i<sensorIDs.length; i++) {
+                            option = document.createElement('option');
+                            option.text = sensorNames[i];
+                            option.value = sensorIDs[i];
+                            document.getElementById('chartOneSelector').add(option);
+                        }
+                    }
+                })
+            </script>
         </div>
         <div class="col">
-            <canvas id="myChart" width="100%" height="50%"></canvas>
+            <canvas id="chart2" width="100%" height="50%"></canvas>
+            <select class="custom-select chartSelector" id="chartTwoSelector">
+                <option value=0 selected disabled>Choose A Sensor</option>
+            </select>
+            <button type="submit" class="btn btn-primary" onclick="updateChart(chartTwo, document.getElementById('chartTwoSelector').value)">Go</button>
             <script>
-                var ctx = document.getElementById('myChart').getContext('2d');
-                var chartOne = new Chart(ctx, {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/info/sensors",
+                    complete: function(response) {
+                        sensors = response.responseJSON;
+                        sensorIDs = sensors['sensorIDs'];
+                        sensorNames = sensors['sensorNames'];
+                        for (var i = 0; i<sensorIDs.length; i++) {
+                            option = document.createElement('option');
+                            option.text = sensorNames[i];
+                            option.value = sensorIDs[i];
+                            document.getElementById('chartTwoSelector').add(option);
+                        }
+                    }
+                })
+            </script>
+        </div>
+        <script>
+                //Get the drawing context of the charts.
+                var chart1 = document.getElementById('chart1').getContext('2d');
+                var chart2 = document.getElementById('chart2').getContext('2d');
+
+                //Create the chart objects.
+                var chartOne = new Chart(chart1, {
                     type: 'line',
                     data: {
                         labels: ['0', '0', '0', '0', '0'],
@@ -40,27 +115,29 @@
                         }]
                     }
                 })
-                $.ajax({
-                    type: "GET",
-                    url: "/api/data/sensor?sensorID=1",
-                    complete: function(response) {
-                        sensorData = response.responseJSON['data'];
-                        for (var i = 0; i<sensorData.length; i++) {
-                            dataPoint = sensorData[i];
-                            var date = new Date(dataPoint['time']*1000).toLocaleString();
-                            var temperature = dataPoint['temperature'];
-                            var humidity = dataPoint['humidity'];
-                            chartOne.data.labels[i] = date;
-                            chartOne.data.datasets[0].data[i] = temperature;
-                            chartOne.data.datasets[1].data[i] = humidity;
-                        }
-                        chartOne.update();
+                var chartTwo = new Chart(chart2, {
+                    type: 'line',
+                    data: {
+                        labels: ['0', '0', '0', '0', '0'],
+                        datasets : [{
+                            label: 'Temperature',
+                            data: [0,0,0,0,0],
+                            backgroundColor: [
+                                'rgba(247, 67, 67, 1.0)'
+                            ]
+                        }, {
+                            label: 'Humidity',
+                            data: [0,0,0,0,0],
+                            backgroundColor: [
+                                'rgba(67, 148, 247, 1.0)'
+                            ]
+                        }]
                     }
                 })
+
+                /*updateChart(chartOne, 1);
+
+                updateChart(chartTwo, 1);*/
             </script>
-        </div>
-        <div class="col">
-            
-        </div>
     </div>
 {% endblock %}
