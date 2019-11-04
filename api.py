@@ -9,6 +9,8 @@ import string, random
 from argon2 import PasswordHasher
 import argon2
 
+import requests, json
+
 api = Blueprint('api', __name__)
 
 def checkAccess(cookieOrKey):
@@ -455,3 +457,17 @@ def dataInput():
             this['humidity'] = row[4]
             out['data'].append(this)
         return jsonify(out)
+
+@api.route('/data/ttnsensor', methods=["POST"])
+def ttnInput():
+    datain = request.json
+    try:
+        apiKey = request.headers['apiKey']
+    except KeyError:
+        apiKey = None
+    data = {
+        'sensorID': datain['payload_fields']['sensorID'],
+        'humidity': datain['payload_fields']['humidity'],
+        'temperature': datain['payload_fields']['temperature']
+    }
+    return requests.post(request.host_url+"api/data/sensor", data=json.dumps(data), headers={"Content-type": "application/json", "apiKey": apiKey}).text
