@@ -444,13 +444,13 @@ def dataInput():
         sensorDetails = cur.execute('SELECT * FROM Sensors WHERE sensorID = ?', (sensorID,))
         sensorDetails = cur.fetchone()
         #Retrieve last 5 data points from database, make it into a json structure and hand it back.
-        rows = cur.execute('SELECT * FROM SensorData WHERE sensorID = ? ORDER BY time DESC LIMIT 5', (sensorID,))
+        rows = cur.execute('SELECT * FROM SensorData WHERE sensorID = ? ORDER BY time DESC LIMIT 5', (sensorID,)).fetchall()
         out['sensorID'] = sensorID
         out['sensorLat'] = sensorDetails[2]
         out['sensorLon'] = sensorDetails[3]
         out['sensorName'] = sensorDetails[1]
         out['data'] = []
-        for row in rows:
+        for row in reversed(rows):
             this = {}
             this['time'] = row[2]
             this['temperature'] = row[3]
