@@ -12,10 +12,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.js" integrity="sha256-arMsf+3JJK2LoTGqxfnuJPFTU4hAK57MtIPdFpiHXOU=" crossorigin="anonymous"></script>
     <script>
         //Update chart function
-        function updateChart(chart, sensorID) {
+        function updateChart(chart, sensorID, amount) {
             $.ajax({
                 type: "GET",
-                url: "/api/data/sensor?sensorID="+sensorID,
+                url: "/api/data/sensor?sensorID="+sensorID+"&amount="+amount,
                 complete: function(response) {
                     sensorData = response.responseJSON['data'];
                     for (var i = 0; i<sensorData.length; i++) {
@@ -46,7 +46,13 @@
             <select class="custom-select chartSelector" id="chartOneSelector">
                 <option value=0 selected disabled>Choose A Sensor</option>
             </select>
-            <button type="submit" class="btn btn-primary" onclick="updateChart(chartOne, document.getElementById('chartOneSelector').value)">Go</button>
+            <select class="custom-select chartSelector" id="chartOneTime">
+                <option value=5 selected>5</option>
+                <option value=10>10</option>
+                <option value=15>15</option>
+                <option value=20>20</option>
+            </select>
+            <button type="submit" class="btn btn-primary" onclick="updateChart(chartOne, document.getElementById('chartOneSelector').value, document.getElementById('chartOneTime').value)">Go</button>
             <script>
                 $.ajax({
                     type: "GET",
@@ -70,7 +76,13 @@
             <select class="custom-select chartSelector" id="chartTwoSelector">
                 <option value=0 selected disabled>Choose A Sensor</option>
             </select>
-            <button type="submit" class="btn btn-primary" onclick="updateChart(chartTwo, document.getElementById('chartTwoSelector').value)">Go</button>
+            <select class="custom-select chartSelector" id="chartTwoTime">
+                <option value=5 selected>5</option>
+                <option value=10>10</option>
+                <option value=15>15</option>
+                <option value=20>20</option>
+            </select>
+            <button type="submit" class="btn btn-primary" onclick="updateChart(chartTwo, document.getElementById('chartTwoSelector').value, document.getElementById('chartTwoTime').value)">Go</button>
             <script>
                 $.ajax({
                     type: "GET",

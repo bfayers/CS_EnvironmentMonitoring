@@ -415,6 +415,9 @@ def dataInput():
             apiKey = request.headers['apiKey']
         except KeyError:
             apiKey = None
+        amnt = request.args.get('amount')
+        if amnt == None:
+            amnt = 5
         if apiKey != None:
             userID, valid = checkAccess(apiKey)
         else:
@@ -444,7 +447,7 @@ def dataInput():
         sensorDetails = cur.execute('SELECT * FROM Sensors WHERE sensorID = ?', (sensorID,))
         sensorDetails = cur.fetchone()
         #Retrieve last 5 data points from database, make it into a json structure and hand it back.
-        rows = cur.execute('SELECT * FROM SensorData WHERE sensorID = ? ORDER BY time DESC LIMIT 5', (sensorID,)).fetchall()
+        rows = cur.execute('SELECT * FROM SensorData WHERE sensorID = ? ORDER BY time DESC LIMIT ?', (sensorID,amnt,)).fetchall()
         out['sensorID'] = sensorID
         out['sensorLat'] = sensorDetails[2]
         out['sensorLon'] = sensorDetails[3]
